@@ -10,15 +10,9 @@ from groq import Groq
 
 app = FastAPI(title="Team AI Planner with Groq")
 
-# ---------------------------
-# Groq SDK
-# ---------------------------
 client = Groq(api_key="GROQ_API_KEY")
 
 
-# ---------------------------
-# Models
-# ---------------------------
 class Developer(BaseModel):
     id: int
     lastName: str
@@ -55,7 +49,7 @@ class RecommendResponse(BaseModel):
 class RiskyTask(BaseModel):
     id: int
     name: str
-    risk: str  # "high" | "medium"
+    risk: str 
     reason: str
 
 
@@ -79,9 +73,6 @@ class ReportRequest(BaseModel):
     tasks: List[Task]
 
 
-# ---------------------------
-# Prompts
-# ---------------------------
 RECOMMEND_PROMPT = """
 Ты — AI-планировщик команды разработки.
 
@@ -141,9 +132,6 @@ REPORT_PROMPT = """
 """.strip()
 
 
-# ---------------------------
-# Groq call helper
-# ---------------------------
 async def call_groq(prompt: str, data: dict):
     def sync_call():
         response = client.chat.completions.create(
@@ -162,10 +150,8 @@ async def call_groq(prompt: str, data: dict):
     if not text:
         raise HTTPException(500, "Groq вернул пустой ответ")
 
-    # Убираем ``` и ```json
     text = re.sub(r"^```(?:json)?\s*|\s*```$", "", text, flags=re.IGNORECASE).strip()
 
-    # Вытаскиваем JSON-блок на случай мусора
     match = re.search(r"\{[\s\S]*\}", text)
     if not match:
         raise HTTPException(500, f"Groq вернул не JSON: {text}")
@@ -178,9 +164,6 @@ async def call_groq(prompt: str, data: dict):
         raise HTTPException(500, f"Groq вернул невалидный JSON: {json_text}")
 
 
-# ---------------------------
-# Endpoints
-# ---------------------------
 @app.post("/recommend", response_model=RecommendResponse)
 async def recommend(req: RecommendRequest):
     return await call_groq(RECOMMEND_PROMPT, req.dict())
